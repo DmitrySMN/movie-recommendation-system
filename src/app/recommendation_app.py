@@ -7,11 +7,10 @@ from pinecone import Pinecone
 load_dotenv(dotenv_path='../../.env')
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
-
 pc = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index("movies")
 
-def load_data_from_csv(file_path='../dataset/movies.csv'):
+def load_data_from_csv(file_path='../../dataset/movies.csv'):
     try:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"The file {file_path} was not found.")
@@ -68,7 +67,7 @@ def main():
     data = load_data_from_csv()
     movie_title = input("Enter movie title: ")
 
-    recommended_movies = recommend_movies(movie_title, data, 12)
+    recommended_movies = recommend_movies(movie_title, data, 5)
     print(recommended_movies)
 
 if __name__ == '__main__':

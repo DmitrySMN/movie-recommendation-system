@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 logging.basicConfig(level=logging.INFO)
 
-def load_data_from_csv(file_path='../dataset/movies.csv'):
+def load_data_from_csv(file_path='../../dataset/movies.csv'):
     try:
         logging.info(f"Data Loading Started from {file_path}")
 
