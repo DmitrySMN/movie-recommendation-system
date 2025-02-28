@@ -63,12 +63,7 @@ def recommend_movies(movie_title, data, top_k):
 
     return recommended_movies
 
-def main():
+def get_recommendations(movie_title):
     data = load_data_from_csv()
-    movie_title = input("Enter movie title: ")
-
     recommended_movies = recommend_movies(movie_title, data, 5)
-    print(recommended_movies)
-
-if __name__ == '__main__':
-    main()
+    return recommended_movies
