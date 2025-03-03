@@ -27,7 +27,7 @@ def load_data_from_csv(file_path='../../dataset/movies.csv'):
 
 def get_movie_id_by_title(movie_title, data):
     movie_info = data[data['title'] == movie_title].iloc[0]
-    movie_id = movie_info['id']
+    movie_id = movie_info['movieId']
     return movie_id
 
 def recommend_movies(movie_title, data, top_k):
@@ -52,7 +52,7 @@ def recommend_movies(movie_title, data, top_k):
         movie_name = metadata.get('movie_name', 'Unknown Title')
         movie_genre = metadata.get('movie_genre', 'Unknown Genre').split()
 
-        imdb_id = data[data['id'] == movie_id]['imdb_id'].values[0]
+        imdb_id = data[data['movieId'] == movie_id]['imdbId'].values[0]
 
         recommended_movies.append({
             'movie_id': movie_id,
@@ -64,6 +64,11 @@ def recommend_movies(movie_title, data, top_k):
     return recommended_movies
 
 def get_recommendations(movie_title):
-    data = load_data_from_csv()
-    recommended_movies = recommend_movies(movie_title, data, 5)
-    return recommended_movies
+    try:
+        data = load_data_from_csv()
+        recommended_movies = recommend_movies(movie_title, data, 5)
+        return recommended_movies
+    except Exception as e:
+        print(str(e))
+
+print(get_recommendations('Toy Story (1995)'))

@@ -1,4 +1,3 @@
-import os
 from dotenv import load_dotenv
 from pinecone import Pinecone
 from data_preprocessing import *
@@ -17,7 +16,7 @@ def upsert_tfidf_vectors_to_pinecone(data, reduced_tfidf_matrix, chunk_size=500)
         upsert_data = []
 
         for i in range(total_rows):
-            movie_id = str(data['id'].iloc[i])
+            movie_id = str(data['movieId'].iloc[i])
             reduced_vector = reduced_tfidf_matrix[i].tolist()
 
             upsert_data.append({

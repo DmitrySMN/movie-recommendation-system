@@ -38,7 +38,7 @@ def preprocess_data(data, max_features=7000, ngram_range=(1, 2)):
 
         logging.info("Fitting TF-IDF Vectorizer...")
 
-        tfidf_matrix = vectorizer.fit_transform(data['overview'])
+        tfidf_matrix = vectorizer.fit_transform(data['combined_features'])
 
         logging.info(f"TF-IDF matrix shape: {tfidf_matrix.shape}")
 

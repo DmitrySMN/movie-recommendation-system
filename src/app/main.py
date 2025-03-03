@@ -8,6 +8,7 @@ app = FastAPI()
 async def main(movie_title: str, response: Response):
     try:
         recommendations = get_recommendations(movie_title)
+        print(recommendations)
         if len(recommendations) > 0:
             response.status_code = status.HTTP_200_OK
             return {"total": len(recommendations), "items": recommendations}
