@@ -11,7 +11,7 @@ async def main(movie_title: str, response: Response):
         print(recommendations)
         if len(recommendations) > 0:
             response.status_code = status.HTTP_200_OK
-            return {"total": len(recommendations), "items": recommendations}
+            return {"result": recommendations}
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"total" : 0, "items": []}
     except Exception as e:

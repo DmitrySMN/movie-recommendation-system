@@ -26,42 +26,48 @@ def load_data_from_csv(file_path='../../dataset/movies.csv'):
         return None
 
 def get_movie_id_by_title(movie_title, data):
-    movie_info = data[data['title'] == movie_title].iloc[0]
-    movie_id = movie_info['movieId']
-    return movie_id
+    try:
+        movie_info = data[data['title'] == movie_title].iloc[0]
+        movie_id = movie_info['movieId']
+        return movie_id
+    except Exception as e:
+        print(str(e))
 
 def recommend_movies(movie_title, data, top_k):
-    movie_id = get_movie_id_by_title(movie_title, data)
-    if not movie_id:
-        return []
+    try:
+        movie_id = get_movie_id_by_title(movie_title, data)
+        if not movie_id:
+            return []
 
-    query_response = index.query(
-        id=str(movie_id),
-        top_k=top_k + 1,
-        include_metadata=True
-    )
+        query_response = index.query(
+            id=str(movie_id),
+            top_k=top_k + 1,
+            include_metadata=True
+        )
 
-    if not query_response or 'matches' not in query_response:
-        print("No matches found for the movie.")
-        return []
+        if not query_response or 'matches' not in query_response:
+            print("No matches found for the movie.")
+            return []
 
-    recommended_movies = []
-    for match in query_response['matches'][1:top_k + 1]:
-        metadata = match.get('metadata', {})
-        movie_id = int(match['id'])
-        movie_name = metadata.get('movie_name', 'Unknown Title')
-        movie_genre = metadata.get('movie_genre', 'Unknown Genre').split()
+        recommended_movies = []
+        for match in query_response['matches'][1:top_k + 1]:
+            metadata = match.get('metadata', {})
+            movie_id = int(match['id'])
+            movie_name = metadata.get('movie_name', 'Unknown Title')
+            movie_genre = metadata.get('movie_genre', 'Unknown Genre').split()
 
-        imdb_id = data[data['movieId'] == movie_id]['imdbId'].values[0]
+            imdb_id = int(data[data['movieId'] == movie_id]['imdbId'].values[0])
 
-        recommended_movies.append({
-            'movie_id': movie_id,
-            'movie_name': movie_name,
-            'movie_genre': " ".join(movie_genre),
-            'imdb_id': imdb_id
-        })
+            recommended_movies.append({
+                'movie_id': movie_id,
+                'movie_name': movie_name,
+                'movie_genre': " ".join(movie_genre),
+                'imdb_id': imdb_id
+            })
 
-    return recommended_movies
+        return recommended_movies
+    except Exception as e:
+        print(str(e))
 
 def get_recommendations(movie_title):
     try:
@@ -70,5 +76,6 @@ def get_recommendations(movie_title):
         return recommended_movies
     except Exception as e:
         print(str(e))
+        return []
 
-print(get_recommendations('Toy Story (1995)'))
+# print(get_recommendations('Toy Story (1995)'))
