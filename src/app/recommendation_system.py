@@ -90,29 +90,34 @@ def get_recommendations(movie_title):
 #     index.upsert(vectors=records)
 
 def fill_index():
-    df = load_data_from_csv()
-    documents = []
-    for i, row in df.iterrows():
-        combined_features = row["combined_features"]
-        md = {
-            "title": row["title"],
-            "genres": row["genres"]
-        }
+    try:
+        df = load_data_from_csv()
+        documents = []
+        for i, row in df.iterrows():
+            combined_features = row["combined_features"]
+            movie_id = row['movieId']
+            md = {
+                "title": row["title"],
+                "genres": row["genres"]
+            }
 
-        documents.append(Document(page_content=combined_features, metadata=md))
-        print(f"document {row['movieId']} created")
+            documents.append(Document(page_content=combined_features, metadata=md))
+            print(f"document {row['movieId']} created")
 
-    print("All documents created. Upsert into index started...")
+        print("All documents created. Upsert into index started...")
 
-    uuids = [str(uuid4()) for _ in range(len(documents))]
-    vector_store.add_documents(documents=documents, ids=uuids)
-    print("upsert into index successful")
+        uuids = [str(uuid4()) for _ in range(len(documents))]
+        vector_store.add_documents(documents=documents, ids=uuids)
+        print("upsert into index successful")
+
+    except Exception as e:
+        print(str(e) + f" Movie id = {movie_id}")
 
 def get_similar():
-    results = vector_store.similarity_search("Drama musical score:Maurice Jarre Maurice Jarre score Africa")
-    # for res in results:
-    #     print(f"* {res.page_content} [{res.metadata}]")
+    results = vector_store.similarity_search("Drama")
+    for res in results:
+        print(f"* {res.page_content} [{res.metadata}]")
     print(results)
 
-# get_similar()
-fill_index()
+get_similar()
+# fill_index()
