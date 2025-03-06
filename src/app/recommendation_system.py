@@ -1,19 +1,20 @@
 import os
+from uuid import uuid4
 import pandas as pd
 from dotenv import load_dotenv
 from pinecone import Pinecone
 from langchain_pinecone import PineconeVectorStore
 from langchain_ollama import OllamaEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_core.documents import Document
 
 load_dotenv(dotenv_path='../../.env')
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 pc = Pinecone(api_key=PINECONE_API_KEY)
-index = pc.Index("movies4096")
-llama_embeddings = OllamaEmbeddings(model="llama3.1")
+index = pc.Index("movies2048")
+llama_embeddings = OllamaEmbeddings(model="llama3.2:1b")
 vector_store = PineconeVectorStore(index, llama_embeddings)
-text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+# text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 
 def load_data_from_csv(file_path='../../dataset/movies.csv'):
     try:
@@ -83,33 +84,35 @@ def get_recommendations(movie_title):
         print(str(e))
         return []
 
+# def process_and_upload_to_pinecone(texts, ids):
+#     embeddings = llama_embeddings.embed_documents(texts)
+#     records = zip(ids, embeddings)
+#     index.upsert(vectors=records)
 
-def process_and_upload_to_pinecone(texts, ids):
-    embeddings = llama_embeddings.embed_documents(texts)
-    records = zip(ids, embeddings)
-    index.upsert(vectors=records)
+def fill_index():
+    df = load_data_from_csv()
+    documents = []
+    for i, row in df.iterrows():
+        combined_features = row["combined_features"]
+        md = {
+            "title": row["title"],
+            "genres": row["genres"]
+        }
 
-# def fill_index():
-#     df = load_data_from_csv()
-#     documents = []
-#     for i, row in df.iterrows():
-#         combined_features = row["combined_features"]
-#         md = {
-#             "title": row["title"],
-#             "genres": row["genres"]
-#         }
-#
-#         documents.append(Document(page_content=combined_features, metadata=md))
-#
-#     uuids = [str(uuid4()) for _ in range(len(documents))]
-#     vector_store.add_documents(documents=documents, ids=uuids)
-#     print("upsert into index successful")
+        documents.append(Document(page_content=combined_features, metadata=md))
+        print(f"document {row['movieId']} created")
+
+    print("All documents created. Upsert into index started...")
+
+    uuids = [str(uuid4()) for _ in range(len(documents))]
+    vector_store.add_documents(documents=documents, ids=uuids)
+    print("upsert into index successful")
 
 def get_similar():
-    results = vector_store.similarity_search("The Matrix")
-    for res in results:
-        print(f"* {res.page_content} [{res.metadata}]")
-
+    results = vector_store.similarity_search("Drama musical score:Maurice Jarre Maurice Jarre score Africa")
+    # for res in results:
+    #     print(f"* {res.page_content} [{res.metadata}]")
+    print(results)
 
 # get_similar()
-
+fill_index()

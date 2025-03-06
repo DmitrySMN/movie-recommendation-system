@@ -8,9 +8,9 @@ PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
-index = pc.Index("movies4096")
+index = pc.Index("movies2048")
 
-def upsert_tfidf_vectors_to_pinecone(data, reduced_tfidf_matrix, chunk_size=500):
+def upsert_tfidf_vectors_to_pinecone(data, reduced_tfidf_matrix, chunk_size=250):
     try:
         total_rows = reduced_tfidf_matrix.shape[0]
         upsert_data = []
@@ -33,7 +33,7 @@ def upsert_tfidf_vectors_to_pinecone(data, reduced_tfidf_matrix, chunk_size=500)
 
             print(f"Upsert completed successfully to Pinecone! id:{movie_id}")
     except Exception as e:
-        print(str(e))
+        print(str(e) + f"{movie_id}")
 
 data = load_data_from_csv()
 
@@ -42,6 +42,6 @@ if data is None or data.empty:
 
 cosine_sim, tfidf_matrix = preprocess_data(data)
 
-reduced_tfidf_matrix = reduce_dimensions(tfidf_matrix, n_components=4096)
+reduced_tfidf_matrix = reduce_dimensions(tfidf_matrix, n_components=2048)
 
 upsert_tfidf_vectors_to_pinecone(data, reduced_tfidf_matrix)
