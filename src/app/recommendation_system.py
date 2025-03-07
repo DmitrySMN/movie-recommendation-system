@@ -31,9 +31,11 @@ def get_movie_id_by_title(movie_title, data):
     try:
         movie_info = data[data['title'] == movie_title].iloc[0]
         movie_id = movie_info['movieId']
-        return movie_id
+        movie_combined_features = movie_info['combined_features']
+        return movie_id, movie_combined_features
     except Exception as e:
         print(str(e))
+        return None
 
 def recommend_movies(movie_title, data, top_k):
     try:
@@ -80,9 +82,12 @@ def get_recommendations(movie_title):
         print(str(e))
         return []
 
-def get_similar(movie_title: str) -> list[dict]:
-    movie_id = get_movie_id_by_title(movie_title, data)
-    combined_features = ""
-    results = vector_store.similarity_search(combined_features)
-    similar_movies = [i.metadata for i in results]
-    return similar_movies
+def get_similar(movie_title: str) -> list:
+    data = load_data_from_csv()
+    metadata = get_movie_id_by_title(movie_title, data)
+    if metadata:
+        results = vector_store.similarity_search(metadata[1])
+        similar_movies = [i.metadata for i in results]
+        return similar_movies
+    else:
+        return []
