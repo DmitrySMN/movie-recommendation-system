@@ -86,7 +86,7 @@ def get_similar(movie_title: str) -> list:
     data = load_data_from_csv()
     metadata = get_movie_id_by_title(movie_title, data)
     if metadata:
-        results = vector_store.similarity_search(metadata[1])
+        results = vector_store.similarity_search(metadata[1], k=5)
         similar_movies = [i.metadata for i in results]
         return similar_movies
     else:
