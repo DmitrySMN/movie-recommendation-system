@@ -1,14 +1,12 @@
 from fastapi import FastAPI, Response, status
 import uvicorn
-from recommendation_system import get_recommendations
-
+from recommendation_system import *
 app = FastAPI()
 
 @app.get("/recommendation/{movie_title}")
 async def main(movie_title: str, response: Response):
     try:
-        recommendations = get_recommendations(movie_title)
-        print(recommendations)
+        recommendations = get_similar(movie_title)
         if len(recommendations) > 0:
             response.status_code = status.HTTP_200_OK
             return {"result": recommendations}

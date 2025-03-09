@@ -2,13 +2,15 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 from pinecone import Pinecone
-
-
+from langchain_pinecone import PineconeVectorStore
+from langchain_ollama import OllamaEmbeddings
 load_dotenv(dotenv_path='../../.env')
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 pc = Pinecone(api_key=PINECONE_API_KEY)
-index = pc.Index("movies")
+index = pc.Index("movies2048")
+llama_embeddings = OllamaEmbeddings(model="llama3.2:1b")
+vector_store = PineconeVectorStore(index, llama_embeddings)
 
 def load_data_from_csv(file_path='../../dataset/movies.csv'):
     try:
@@ -29,9 +31,11 @@ def get_movie_id_by_title(movie_title, data):
     try:
         movie_info = data[data['title'] == movie_title].iloc[0]
         movie_id = movie_info['movieId']
-        return movie_id
+        movie_combined_features = movie_info['combined_features']
+        return movie_id, movie_combined_features
     except Exception as e:
         print(str(e))
+        return None
 
 def recommend_movies(movie_title, data, top_k):
     try:
@@ -78,4 +82,12 @@ def get_recommendations(movie_title):
         print(str(e))
         return []
 
-# print(get_recommendations('Toy Story (1995)'))
+def get_similar(movie_title: str) -> list:
+    data = load_data_from_csv()
+    metadata = get_movie_id_by_title(movie_title, data)
+    if metadata:
+        results = vector_store.similarity_search(metadata[1], k=5)
+        similar_movies = [i.metadata for i in results]
+        return similar_movies
+    else:
+        return []
