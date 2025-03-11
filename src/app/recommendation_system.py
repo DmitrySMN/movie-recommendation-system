@@ -3,7 +3,13 @@ import pandas as pd
 from dotenv import load_dotenv
 from pinecone import Pinecone
 from langchain_pinecone import PineconeVectorStore
-from langchain_ollama import OllamaEmbeddings
+from langchain import hub
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.retrieval import create_retrieval_chain
+from langchain_core.documents import Document
+from langchain_ollama import OllamaEmbeddings, ChatOllama, OllamaLLM
+from langchain_core.documents import Document
+
 load_dotenv(dotenv_path='../../.env')
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
@@ -11,6 +17,44 @@ pc = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index("movies2048")
 llama_embeddings = OllamaEmbeddings(model="llama3.2:1b")
 vector_store = PineconeVectorStore(index, llama_embeddings)
+
+def get_documents():
+    documents = []
+    df = load_data_from_csv()
+    df = df.dropna(subset=["combined_features"])
+
+    for i, row in df.iterrows():
+        combined_features = row["combined_features"]
+        movie_id = row['movieId']
+        md = {
+            "title": row["title"],
+            "genres": row["genres"]
+        }
+        documents.append(Document(page_content=combined_features, metadata=md))
+        print(f"document {row['movieId']} created")
+
+    return documents
+
+def handle_query(query: str):
+    docsearch = PineconeVectorStore.from_documents(
+        documents=get_documents(),
+        index_name="movies2048",
+        embedding=llama_embeddings,
+        namespace="default"
+    )
+    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
+    retriever = docsearch.as_retriever()
+    llm = ChatOllama(
+        model='llama3.2:1b',
+        temperature=0.0
+    )
+    combine_docs_chain = create_stuff_documents_chain(
+        llm, retrieval_qa_chat_prompt
+    )
+    retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
+
+    answer1_with_knowledge = retrieval_chain.invoke({"input": query})
+    print(answer1_with_knowledge)
 
 def load_data_from_csv(file_path='../../dataset/movies.csv'):
     try:
@@ -91,3 +135,5 @@ def get_similar(movie_title: str) -> list:
         return similar_movies
     else:
         return []
+
+handle_query("hello")
