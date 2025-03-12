@@ -126,3 +126,4 @@ def get_similar(movie_title: str) -> list:
     else:
         return []
 
+print(handle_message("hello"))

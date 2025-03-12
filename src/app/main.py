@@ -16,5 +16,16 @@ async def main(movie_title: str, response: Response):
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"message": str(e)}
 
+@app.get("/recommendation/message/{message}")
+async def main(message: str, response: Response):
+    try:
+        answer = handle_message(message)['answer']
+        response.status_code = status.HTTP_200_OK
+        return {"result": answer}
+    except Exception as e:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {"message": str(e)}
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
