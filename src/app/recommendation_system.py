@@ -7,7 +7,7 @@ from langchain import hub
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.documents import Document
-from langchain_ollama import OllamaEmbeddings, ChatOllama, OllamaLLM
+from langchain_ollama import OllamaEmbeddings, ChatOllama
 from langchain_core.documents import Document
 
 load_dotenv(dotenv_path='../../.env')
@@ -35,9 +35,8 @@ def get_documents():
 
     return documents
 
-def handle_query(query: str):
-    docsearch = PineconeVectorStore.from_documents(
-        documents=get_documents(),
+def handle_message(query: str):
+    docsearch = PineconeVectorStore.from_existing_index(
         index_name="movies2048",
         embedding=llama_embeddings,
         namespace="default"
@@ -54,7 +53,7 @@ def handle_query(query: str):
     retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
 
     answer1_with_knowledge = retrieval_chain.invoke({"input": query})
-    print(answer1_with_knowledge)
+    return answer1_with_knowledge
 
 def load_data_from_csv(file_path='../../dataset/movies.csv'):
     try:
@@ -117,15 +116,6 @@ def recommend_movies(movie_title, data, top_k):
     except Exception as e:
         print(str(e))
 
-def get_recommendations(movie_title):
-    try:
-        data = load_data_from_csv()
-        recommended_movies = recommend_movies(movie_title, data, 5)
-        return recommended_movies
-    except Exception as e:
-        print(str(e))
-        return []
-
 def get_similar(movie_title: str) -> list:
     data = load_data_from_csv()
     metadata = get_movie_id_by_title(movie_title, data)
@@ -136,4 +126,3 @@ def get_similar(movie_title: str) -> list:
     else:
         return []
 
-handle_query("hello")
