@@ -53,9 +53,9 @@ class RecommendationSystem():
             return None
         
     @staticmethod
-    def get_similar(movie_title: str) -> list:
+    def get_similar(this_object, movie_title: str) -> list:
         data = RecommendationSystemUtils.load_data_from_csv()
-        metadata = RecommendationSystemUtils.get_movie_id_by_title(movie_title, data)
+        metadata = this_object.get_movie_id_by_title(movie_title, data)
         if metadata:
             results = vector_store.similarity_search(metadata[1], k=5)
             similar_movies = [i.metadata for i in results]
@@ -80,21 +80,3 @@ class RecommendationSystemUtils():
         except Exception as e:
             print(f"An error occurred while loading the data: {str(e)}")
             return None
-
-    @staticmethod
-    def get_documents(this_object):
-        documents = []
-        df = this_object.load_data_from_csv()
-        df = df.dropna(subset=["combined_features"])
-
-        for i, row in df.iterrows():
-            combined_features = row["combined_features"]
-            movie_id = row['movieId']
-            md = {
-                "title": row["title"],
-                "genres": row["genres"]
-            }
-            documents.append(Document(page_content=combined_features, metadata=md))
-            print(f"document {row['movieId']} created")
-
-        return documents
