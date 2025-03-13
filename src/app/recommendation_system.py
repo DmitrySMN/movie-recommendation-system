@@ -18,112 +18,83 @@ index = pc.Index("movies2048")
 llama_embeddings = OllamaEmbeddings(model="llama3.2:1b")
 vector_store = PineconeVectorStore(index, llama_embeddings)
 
-def get_documents():
-    documents = []
-    df = load_data_from_csv()
-    df = df.dropna(subset=["combined_features"])
 
-    for i, row in df.iterrows():
-        combined_features = row["combined_features"]
-        movie_id = row['movieId']
-        md = {
-            "title": row["title"],
-            "genres": row["genres"]
-        }
-        documents.append(Document(page_content=combined_features, metadata=md))
-        print(f"document {row['movieId']} created")
-
-    return documents
-
-def handle_message(query: str):
-    docsearch = PineconeVectorStore.from_existing_index(
-        index_name="movies2048",
-        embedding=llama_embeddings,
-        namespace="default"
-    )
-    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
-    retriever = docsearch.as_retriever()
-    llm = ChatOllama(
-        model='llama3.2:1b',
-        temperature=0.0
-    )
-    combine_docs_chain = create_stuff_documents_chain(
-        llm, retrieval_qa_chat_prompt
-    )
-    retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
-
-    answer1_with_knowledge = retrieval_chain.invoke({"input": query})
-    return answer1_with_knowledge
-
-def load_data_from_csv(file_path='../../dataset/movies.csv'):
-    try:
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"The file {file_path} was not found.")
-
-        data = pd.read_csv(filepath_or_buffer=file_path, low_memory=False)
-
-        if data.empty:
-            raise ValueError(f"The file {file_path} was loaded but it is empty.")
-
-        return data
-    except Exception as e:
-        print(f"An error occurred while loading the data: {str(e)}")
-        return None
-
-def get_movie_id_by_title(movie_title, data):
-    try:
-        movie_info = data[data['title'] == movie_title].iloc[0]
-        movie_id = movie_info['movieId']
-        movie_combined_features = movie_info['combined_features']
-        return movie_id, movie_combined_features
-    except Exception as e:
-        print(str(e))
-        return None
-
-def recommend_movies(movie_title, data, top_k):
-    try:
-        movie_id = get_movie_id_by_title(movie_title, data)
-        if not movie_id:
-            return []
-
-        query_response = index.query(
-            id=str(movie_id),
-            top_k=top_k + 1,
-            include_metadata=True
+class RecommendationSystem():
+    @staticmethod
+    def get_recommendation_by_message(query: str):
+        docsearch = PineconeVectorStore.from_existing_index(
+            index_name="movies2048",
+            embedding=llama_embeddings,
+            namespace="default"
         )
+        retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
+        retriever = docsearch.as_retriever()
+        llm = ChatOllama(
+            model='llama3.2:1b',
+            temperature=0.0
+        )
+        combine_docs_chain = create_stuff_documents_chain(
+            llm, retrieval_qa_chat_prompt
+        )
+        retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
 
-        if not query_response or 'matches' not in query_response:
-            print("No matches found for the movie.")
+        answer1_with_knowledge = retrieval_chain.invoke({"input": query})
+        return answer1_with_knowledge
+        
+    @staticmethod
+    def get_movie_id_by_title(movie_title, data):
+        try:
+            movie_info = data[data['title'] == movie_title].iloc[0]
+            movie_id = movie_info['movieId']
+            movie_combined_features = movie_info['combined_features']
+            return movie_id, movie_combined_features
+        except Exception as e:
+            print(str(e))
+            return None
+        
+    @staticmethod
+    def get_similar(movie_title: str) -> list:
+        data = RecommendationSystemUtils.load_data_from_csv()
+        metadata = RecommendationSystemUtils.get_movie_id_by_title(movie_title, data)
+        if metadata:
+            results = vector_store.similarity_search(metadata[1], k=5)
+            similar_movies = [i.metadata for i in results]
+            return similar_movies
+        else:
             return []
+        
 
-        recommended_movies = []
-        for match in query_response['matches'][1:top_k + 1]:
-            metadata = match.get('metadata', {})
-            movie_id = int(match['id'])
-            movie_name = metadata.get('movie_name', 'Unknown Title')
-            movie_genre = metadata.get('movie_genre', 'Unknown Genre').split()
+class RecommendationSystemUtils():
+    @staticmethod
+    def load_data_from_csv(file_path='../../dataset/movies.csv'):
+        try:
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"The file {file_path} was not found.")
 
-            imdb_id = int(data[data['movieId'] == movie_id]['imdbId'].values[0])
+            data = pd.read_csv(filepath_or_buffer=file_path, low_memory=False)
 
-            recommended_movies.append({
-                'movie_id': movie_id,
-                'movie_name': movie_name,
-                'movie_genre': " ".join(movie_genre),
-                'imdb_id': imdb_id
-            })
+            if data.empty:
+                raise ValueError(f"The file {file_path} was loaded but it is empty.")
 
-        return recommended_movies
-    except Exception as e:
-        print(str(e))
+            return data
+        except Exception as e:
+            print(f"An error occurred while loading the data: {str(e)}")
+            return None
 
-def get_similar(movie_title: str) -> list:
-    data = load_data_from_csv()
-    metadata = get_movie_id_by_title(movie_title, data)
-    if metadata:
-        results = vector_store.similarity_search(metadata[1], k=5)
-        similar_movies = [i.metadata for i in results]
-        return similar_movies
-    else:
-        return []
+    @staticmethod
+    def get_documents(this_object):
+        documents = []
+        df = this_object.load_data_from_csv()
+        df = df.dropna(subset=["combined_features"])
 
-print(handle_message("hello"))
+        for i, row in df.iterrows():
+            combined_features = row["combined_features"]
+            movie_id = row['movieId']
+            md = {
+                "title": row["title"],
+                "genres": row["genres"]
+            }
+            documents.append(Document(page_content=combined_features, metadata=md))
+            print(f"document {row['movieId']} created")
+
+        return documents
